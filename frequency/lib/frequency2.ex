@@ -13,11 +13,11 @@ defmodule Frequency2 do
 
   ## Callbacks
 
-  def init(_), do: {ok, {get_frequencies, []}}
+  def init(_), do: {:ok, {get_frequencies, []}}
 
   def terminate(_, _), do: :ok
 
-  def handle_call(:allocate, {from, _ref}, state) do
+  def handle_call(:allocate, {from, _ref}, frequencies) do
     {new_state, response} = allocate(frequencies, from)
     {:reply, response, new_state}
   end
@@ -27,6 +27,10 @@ defmodule Frequency2 do
     {:noreply, new_state}
   end
   def handle_cast(:stop, frequencies), do: {:stop, :normal, frequencies}
+
+  def format_status(_opt, [_proc_dict, {available, allocated}]) do
+    {:data, [{"State", {{:available, available}, {:allocated, allocated}}}]}
+  end
 
   ## Helpers
 
