@@ -1,60 +1,26 @@
 defmodule Frequency do
   ## Client API
 
-  def start do
-    Process.register(spawn(__MODULE__, :init, []), __MODULE__)
-  end
+  def start, do: Server.start(__MODULE__, [])
 
-  def stop do
-    call(:stop)
-  end
+  def stop, do: Server.stop(__MODULE__)
 
-  def allocate do
-    call(:allocate)
-  end
+  def allocate, do: Server.call(__MODULE__, :allocate)
 
-  def deallocate(frequency) do
-    call({:deallocate, frequency})
-  end
+  def deallocate(frequency), do: Server.call(__MODULE__, {:deallocate, frequency})
 
   ## Callbacks
 
-  def init do
-    state = {get_frequencies(), []}
-    loop(state)
-  end
+  def init(_), do: {get_frequencies, []}
 
-  def loop(frequencies) do
-    receive do
-      {:request, from, :allocate} ->
-        {new_frequencies, reply} = allocate(frequencies, from)
-        reply(from, reply)
-        loop(new_frequencies)
-      {:request, from, {:deallocate, freq}} ->
-        new_frequencies = deallocate(frequencies, freq)
-        reply(from, :ok)
-        loop(new_frequencies)
-      {:request, from, :stop} ->
-        reply(from, :ok)
-    end
-  end
+  def terminate(_), do: :ok
+
+  def handle(:allocate, from, frequencies), do: allocate(frequencies, from)
+  def handle({:deallocate, freq}, _from, frequencies), do: {deallocate(frequencies, freq), :ok}
 
   ## Helpers
 
-  defp get_frequencies do
-    [10, 11, 12, 13, 14, 15]
-  end
-
-  defp call(message) do
-    send(__MODULE__, {:request, self, message})
-    receive do
-      {:reply, reply} -> reply
-    end
-  end
-
-  defp reply(pid, reply) do
-    send(pid, {:reply, reply})
-  end
+  defp get_frequencies, do: [10, 11, 12, 13, 14, 15]
 
   defp allocate({[], _} = state, _), do: {state, {:error, :no_frequency}}
   defp allocate({[freq | rest], allocated}, pid), do: {{rest, [{freq, pid} | allocated]}, {:ok, freq}}
