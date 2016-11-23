@@ -1,5 +1,7 @@
 defmodule CoffeeFSM do
 
+  @timeout 10000
+
   ## Raw gen_fsm
 
   ## Inbound events
@@ -32,7 +34,7 @@ defmodule CoffeeFSM do
 
   def selection({:selection, type, price}, _) do
     pay_screen(price)
-    {:next_state, :payment, {type, price, 0}}
+    {:next_state, :payment, {type, price, 0}, @timeout}
   end
 
   def selection({:pay, coin}, _) do
@@ -53,10 +55,16 @@ defmodule CoffeeFSM do
     total_paid = paid + coin
     more_to_pay = price - total_paid
     pay_screen(more_to_pay)
-    {:next_state, :payment, {type, price, total_paid}}
+    {:next_state, :payment, {type, price, total_paid}, @timeout}
   end
 
   def payment(:cancel, {_, _, paid}) do
+    home_screen()
+    return_change(paid)
+    {:next_state, :selection, :none}
+  end
+
+  def payment(:timeout, {_, _, paid}) do
     home_screen()
     return_change(paid)
     {:next_state, :selection, :none}
