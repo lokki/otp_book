@@ -1,6 +1,6 @@
 defmodule CoffeeFSM do
 
-  @timeout 10000
+  @timeout 30000
 
   ## Raw gen_fsm
 
@@ -14,6 +14,8 @@ defmodule CoffeeFSM do
   def cup_removed,  do: :gen_fsm.send_event(__MODULE__, :cup_removed)
   def pay(coin),    do: :gen_fsm.send_event(__MODULE__, {:pay, coin})
   def cancel,       do: :gen_fsm.send_event(__MODULE__, :cancel)
+
+  def stop,         do: :gen_fsm.sync_send_all_state_event(__MODULE__, :cancel)
   
   ## Server API
 
@@ -29,6 +31,16 @@ defmodule CoffeeFSM do
     Process.flag(:trap_exit, true)
     {:ok, :selection, :none}
   end
+
+  def handle_sync_event({:stop, _, _, data}), do: 
+    {:stop, :normal, data}
+
+  def terminate(_, :payment, {_, _, paid}) do
+    return_change(paid)
+    HW.stop()
+  end
+  def terminate(_, _, _), do:
+    HW.stop()
 
   ## States
 
@@ -70,8 +82,8 @@ defmodule CoffeeFSM do
     {:next_state, :selection, :none}
   end
 
-  def payment(_, state), do: 
-    {:next_state, :payment, state}
+  def payment(_, data), do: 
+    {:next_state, :payment, data}
 
   def remove(:cup_removed, _) do
     home_screen()

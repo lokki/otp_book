@@ -6,8 +6,10 @@ defmodule HW do
 
   def drop_cup, do: IO.puts "Machine: Dropped Cup."
 
-  def prepare(type), do: IO.puts "Machine: Preparing #{type}."
+  def prepare(type), do: IO.puts "Machine: Preparing #{type}..."
 
   def reboot, do: IO.puts "Machine: Rebooted Hardware."
+
+  def stop, do: IO.puts "Machine: Shutting down..."
 
 end
